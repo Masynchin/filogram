@@ -1,0 +1,10 @@
+[run]
+omit =
+    filogram/__init__.py
+    filogram/bot.py
+    filogram/cli.py
+    filogram/config.py
+    filogram/exceptions.py
+    filogram/keyboards.py
+    filogram/logger.py
+    filogram/templates.py

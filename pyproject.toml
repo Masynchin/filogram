@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "filogram"
+version = "0.1.0"
+description = "Filogram - telegram bot for effortless files keeping"
+authors = ["Masynchin <masynchin@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aiogram = "^2.13"
+loguru = "^0.5.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+pytest-cov = "^2.12.1"
+black = "^21.5-beta.2"
+flake8 = "^3.9.2"
+
+[tool.poetry.scripts]
+bot = "filogram.cli:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
