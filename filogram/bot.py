@@ -30,7 +30,11 @@ async def send_welcome(message):
 
 
 class UploadDocuments(StatesGroup):
-    """Состояние для выбора категории загружаемого файла"""
+    """Состояние пользователя при загрузке файлов.
+
+    Пользователь может загрузить один или несколько файлов и сохранить
+    их в уже существующей категории, либо в новой, которую должен ввести
+    """
 
     handle_documents_or_category = State()
     handle_new_category = State()
@@ -38,7 +42,7 @@ class UploadDocuments(StatesGroup):
 
 @dp.message_handler(content_types=ContentType.DOCUMENT)
 async def handle_document_message(message):
-    """Обработка отправленного документа.
+    """Обработка отправленного файла.
 
     Для загружаемого файла предлагается выбрать категорию из уже
     созданных пользователем, или создать новую
@@ -56,11 +60,12 @@ async def handle_document_message(message):
 async def send_message_about_documents_save(message, keyboard):
     """
     Отправляем сообщение с тем, что пользователь может
-    загрузить ещё файлов, либо сохранить текущие с определённой
-    категорией. К сообщению прикрепляется клавиатура с категориями
+    загрузить ещё файлы (в дополнение к ожидающим сохранения), либо
+    сохранить текущие в определённой категории. К сообщению
+    прикрепляется клавиатура с категориями
     """
     await message.answer(
-        "Вы можете отправить ещё файлов для "
+        "Вы можете отправить ещё файлы для "
         "сохранения, либо выбрать категорию:",
         reply_markup=keyboard,
     )
@@ -71,7 +76,7 @@ async def send_message_about_documents_save(message, keyboard):
     state=UploadDocuments.handle_documents_or_category,
 )
 async def handle_additional_document_to_save(message, state):
-    """Обработка дополнительного документа к сохранению"""
+    """Обработка дополнительного файла к сохранению"""
     async with state.proxy() as data:
         data["documents"].append(message.document)
 
@@ -85,7 +90,7 @@ async def handle_documents_or_category(call, state):
 
     Пользователь нажал на кнопку приложенной к выбору
     категории inline-клавиатуры. Это либо существующая категория,
-    либо кнопка 'Добавить категорию'
+    либо кнопка "Добавить категорию"
     """
     await call.message.delete()  # удаляем клавиатуру
 
@@ -107,7 +112,7 @@ async def handle_documents_or_category(call, state):
 async def handle_new_category(message, state):
     """Обработка новой категории.
 
-    Пользователь ввёл новую категорию, проверка на правильность
+    Пользователь ввёл новую категорию - проверка на правильность
     названия категории, и сохранение файла в данной категории
     """
     if message.text.strip() == keyboards.EXTRA_CATEGORY:
@@ -124,7 +129,11 @@ async def handle_new_category(message, state):
 
 
 async def save_documents(documents, user_id, category, message):
-    """Сохранение переданных файлов"""
+    """Сохранение переданных файлов.
+
+    Сохраняем переданные файлы и сообщаем, сколько из них сохранилось
+    (возможно пользователь отправил файлы, которые уже были загружены ранее)
+    """
     all_files_saved = True
     any_files_saved = False
 
@@ -150,6 +159,9 @@ async def send_message_how_many_documents_was_saved(
     if all_files_saved:
         await message.answer("Все файлы сохранены!")
     elif any_files_saved:
+        # если какой-то файл не был сохранён, то было
+        # отправлено сообщение вида "<document> уже сохранён",
+        # поэтому используется слово "остальные"
         await message.answer("Остальные файлы сохранены!")
     else:
         await message.answer("Ни один файл не сохранён!")
@@ -164,7 +176,7 @@ def get_document_filename(document):
 async def send_owned_files(message):
     """Обработка команды "Мои файлы".
 
-    Отправляем пользователю информацию о его файлах.
+    Отправляем пользователю информацию о его загруженных файлах.
     """
     user_id = message.from_user.id
     answer_message = generate_owned_files_answer(user_id)
@@ -189,7 +201,7 @@ def generate_owned_files_answer(user_id):
 
 
 class GetCategoryState(StatesGroup):
-    """Состояние пользователя при выборе категории"""
+    """Состояние пользователя при выборе категории файлов для получения"""
 
     handle_category = State()
 
@@ -232,7 +244,10 @@ async def handle_category_to_get(call, state):
 
 
 async def send_files(files, message):
-    """Отправка файлов пользователю"""
+    """Отправка файлов пользователю.
+
+    Отправляем пользователю файлы как группу файлов
+    """
     media_group = MediaGroup()
     attachments = (InputMediaDocument(f.file_id) for f in files)
     media_group.attach_many(*attachments)
@@ -240,7 +255,7 @@ async def send_files(files, message):
 
 
 class DeleteCategoryState(StatesGroup):
-    """Состояние пользователя при удалении категории"""
+    """Состояние пользователя при выборе категории файлов для удаления"""
 
     handle_category = State()
 
@@ -286,11 +301,11 @@ async def handle_category_to_delete(call, state):
 
 @dp.message_handler(RegexpCommandsFilter(regexp_commands=[r"f(\d*)"]))
 async def handle_get_file_command(message, regexp_command):
-    """Обработка команды /f{unique_id}.
+    """Обработка команды /f<unique_id>.
 
     Обрабатываем команду получения файла по его ID.
     Если файл с таким ID существует, и он принадлежит данному
-    пользователю, то отправляем его в виде документа
+    пользователю, то отправляем его
     """
     unique_id = int(regexp_command.group(1))
     user_id = message.from_user.id
@@ -304,7 +319,7 @@ async def handle_get_file_command(message, regexp_command):
 
 @dp.message_handler(RegexpCommandsFilter(regexp_commands=[r"d(\d*)"]))
 async def handle_delete_file_command(message, regexp_command):
-    """Обработка команды /d{unique_id}.
+    """Обработка команды /d<unique_id>.
 
     Обрабатываем команду удаления файла по его ID.
     Если пользователь имеет доступ к данному файлу, то
@@ -324,7 +339,7 @@ async def handle_delete_file_command(message, regexp_command):
 async def handle_errors(update, error):
     """Обработка непредвиденных ошибок.
 
-    Записываем ошибку в логи, а также отправляем пользователю
+    Логируем ошибку, а также отправляем пользователю
     сообщение, что произошла непредвиденная ошибка
     """
     message = update.message or update.callback_query.message
