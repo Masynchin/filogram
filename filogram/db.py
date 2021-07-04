@@ -12,6 +12,11 @@ conn = None
 
 @contextmanager
 def get_cursor():
+    """Получение курсора для выполнения запроса к БД.
+
+    Если во время запроса произошла ошибка sqlite3.IntegrityError,
+    то прокидываем исключение наверх. Если возникла другая ошибка, то логируем
+    """
     try:
         cursor = conn.cursor()
         yield cursor
@@ -27,6 +32,7 @@ def get_cursor():
 
 
 def insert(column_values):
+    """Добавляем данные в БД"""
     columns = ",".join(column_values.keys())
     placeholders = ",".join("?" * len(column_values))
     values = tuple(column_values.values())
@@ -44,6 +50,10 @@ def insert(column_values):
 
 @contextmanager
 def catch_integrity():
+    """
+    Декоратор для перехвата ошибки `sqlite3.IntegrityError`
+    с заменой на нашу `exceptions.IntegrityError`
+    """
     try:
         yield
     except sqlite3.IntegrityError as e:
@@ -51,6 +61,7 @@ def catch_integrity():
 
 
 def fetchone(columns, distinct=False, **conditions):
+    """Получаем одну запись из БД"""
     columns = ",".join(columns)
     distinct_query = "DISTINCT" if distinct else ""
     condition_query, condition_values = _create_condition(**conditions)
@@ -68,6 +79,7 @@ def fetchone(columns, distinct=False, **conditions):
 
 
 def fetchall(columns, distinct=False, **conditions):
+    """Получаем все записи из БД"""
     columns = ",".join(columns)
     distinct_query = "DISTINCT" if distinct else ""
     condition_query, condition_values = _create_condition(**conditions)
@@ -86,6 +98,7 @@ def fetchall(columns, distinct=False, **conditions):
 
 
 def delete(**conditions):
+    """Удаляем запись из БД"""
     condition_query, condition_values = _create_condition(**conditions)
 
     with get_cursor() as cursor:
@@ -99,21 +112,28 @@ def delete(**conditions):
 
 
 def _create_condition(**conditions):
+    """Создаён из именованых аргументов WHERE условие для sqlite3"""
     condition_query = " AND ".join(f"{key} = ?" for key in conditions)
     condition_values = tuple(conditions.values())
     return (condition_query, condition_values)
 
 
 def reset_connection():
+    """Закрываем текущее соединение и устаналиваем новое.
+
+    Функция используется только при тестах для получения корректный ID записей
+    """
     close_connection()
     _set_connection()
 
 
 def close_connection():
+    """Закрываем соединение к БД"""
     conn.close()
 
 
 def _set_connection():
+    """Устанавливаем соединение к БД"""
     global conn
 
     conn = sqlite3.connect(config.DATABASE_URL)
@@ -122,6 +142,7 @@ def _set_connection():
 
 
 def _init_db():
+    """Инициализация БД из скрипта"""
     with open(config.CREATE_DB_SCRIPT_PATH) as f, get_cursor() as cursor:
         script = f.read()
         cursor.executescript(script)
