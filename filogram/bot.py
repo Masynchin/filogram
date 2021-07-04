@@ -141,7 +141,7 @@ async def save_documents(documents, user_id, category, message):
         try:
             file_service.save_telegram_document(document, user_id, category)
         except exceptions.FileAlreadyExists:
-            filename = get_document_filename(document)
+            filename = document.file_name
             await message.answer(f"{filename} уже сохранён")
             all_files_saved = False
         else:
@@ -165,11 +165,6 @@ async def send_message_how_many_documents_was_saved(
         await message.answer("Остальные файлы сохранены!")
     else:
         await message.answer("Ни один файл не сохранён!")
-
-
-def get_document_filename(document):
-    """Получаем название файла из документа"""
-    return document.file_name
 
 
 @dp.message_handler(TextFilter(equals=keyboards.MY_FILES))
