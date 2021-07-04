@@ -1,0 +1,13 @@
+[flake8]
+docstring-convention=numpy
+exclude = __init__.py
+ignore =
+    # ingnore blank line separator rule on long one-line docstrings
+    D205
+    # ignore period rule on one-line docstrings
+    D400
+per-file-ignores =
+    # ignore docstring warnings in tests
+    tests/*:D
+    # ignore warnings about .next() because this is FSMContext method
+    filogram/bot.py:B305

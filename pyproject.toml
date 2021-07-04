@@ -15,6 +15,9 @@ pytest = "^6.2.4"
 pytest-cov = "^2.12.1"
 black = "^21.5-beta.2"
 flake8 = "^3.9.2"
+flake8-bugbear = "^21.4.3"
+flake8-docstrings = "^1.6.0"
+flake8-comprehensions = "^3.5.0"
 
 [tool.poetry.scripts]
 bot = "filogram.cli:cli"
